@@ -15,7 +15,11 @@ const (
 )
 
 func Login(w http.ResponseWriter, req *http.Request) {
-	jump := fmt.Sprintf("https://%s%s", req.Host, req.URL.Path)
+	scheme := "http://"
+	if req.TLS != nil {
+		scheme = "https://"
+	}
+	jump := strings.Join([]string{scheme, req.Host, req.URL.Path}, "")
 	service := fmt.Sprintf("%s?jump=%s", redirectURL, jump)
 	ticket := req.URL.Query().Get("ticket")
 	if ticket == "" {
