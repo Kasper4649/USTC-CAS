@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"regexp"
 	"strings"
 )
 
@@ -27,13 +28,15 @@ func Login(w http.ResponseWriter, req *http.Request) {
 		_, _ = w.Write([]byte(err.Error()))
 		return
 	}
-	dataStr := string(data)
-	if !strings.Contains(dataStr, "authenticationSuccess") {
+	if !strings.Contains(string(data), "authenticationSuccess") {
 		w.WriteHeader(http.StatusUnauthorized)
 		_, _ = w.Write([]byte(err.Error()))
 		return
 	}
-	_, _ = w.Write(data)
+	user := regExp("<cas:user>(\\w+)</cas:user>", data)
+	gid := regExp("<cas:gid>(\\d+)</cas:gid>", data)
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte(user + "\n" + gid))
 }
 
 func checkTicket(ticket, service string) ([]byte, error) {
@@ -48,4 +51,10 @@ func checkTicket(ticket, service string) ([]byte, error) {
 		return nil, err
 	}
 	return data, nil
+}
+
+func regExp(reg string, data []byte) string {
+	r := regexp.MustCompile(reg)
+	s := r.FindSubmatch(data)
+	return string(s[len(s)-1])
 }
